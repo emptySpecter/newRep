@@ -7,23 +7,23 @@ import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Vector2;
 
 public class Monster implements Poolable {
-    private GameScreen gameScreen;
+    protected GameScreen gameScreen;
     private Map map;
 
-    private TextureRegion texture;
-    private TextureRegion textureHp;
-    private TextureRegion textureBackHp;
-    private Vector2 position;
-    private Vector2 destination;
+    protected TextureRegion texture;
+    protected TextureRegion textureHp;
+    protected TextureRegion textureBackHp;
+    protected Vector2 position;
+    protected Vector2 destination;
 
-    private Circle hitArea;
+    protected Circle hitArea;
 
-    private Vector2 velocity;
+    protected Vector2 velocity;
 
-    private int hp;
-    private int hpMax;
+    protected int hp;
+    protected int hpMax;
 
-    private boolean active;
+    protected boolean active;
 
     @Override
     public boolean isActive() {
@@ -72,8 +72,11 @@ public class Monster implements Poolable {
 
     public void getNextPoint() {
         map.buildRoute(gameScreen.getKing().getCellX(), gameScreen.getKing().getCellY(), (int) (position.x / 80), (int) (position.y / 80), destination);
-        System.out.println(destination);
         destination.scl(80, 80).add(40, 40);
+    }
+
+    public boolean isAlive() {
+        return hp >= 0;
     }
 
     public void render(SpriteBatch batch) {

@@ -23,16 +23,29 @@ public class Map {
     private TextureRegion textureRegionRoad;
 
     private int[][] routeHelperArray;
+    private int[][] wallHelperArray;
 
     public Map(String mapName) {
         data = new int[MAP_WIDTH][MAP_HEIGHT];
         routeHelperArray = new int[MAP_WIDTH][MAP_HEIGHT];
+        wallHelperArray = new int[MAP_WIDTH][MAP_HEIGHT];
 
         textureRegionGrass = Assets.getInstance().getAtlas().findRegion("grass");
         textureRegionRoad = Assets.getInstance().getAtlas().findRegion("road");
         loadMapFromFile(mapName);
     }
 
+    public int[][] getMapOfWalls(){
+        for (int i = 0; i < MAP_WIDTH; i++) {
+            for (int j = 0; j < MAP_HEIGHT; j++) {
+                wallHelperArray[i][j] = 0;
+                if (!isCellEmpty(i, j)) {
+                    wallHelperArray[i][j] = 9;
+                }
+            }
+        }
+        return wallHelperArray;
+    }
     public boolean isCellEmpty(int cellX, int cellY) {
         int value = data[cellX][cellY];
         if (value == ELEMENT_GRASS || value == ELEMENT_ROAD) {

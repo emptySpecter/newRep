@@ -137,4 +137,12 @@ public class TurretEmitter extends ObjectPool<Turret> {
             }
         }
     }
+    public void reset(){
+        for (int i = 0; i < activeList.size(); i++) {
+            activeList.get(i).deactivate();
+        }
+        checkPool();
+    }
+
+
 }

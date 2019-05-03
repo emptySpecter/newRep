@@ -1,12 +1,9 @@
 package com.geekbrains.td;
 
 import com.badlogic.gdx.*;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
@@ -15,6 +12,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+
+import java.util.LinkedList;
 
 public class GameScreen implements Screen {
     private SpriteBatch batch;
@@ -28,14 +27,24 @@ public class GameScreen implements Screen {
     private InfoEmitter infoEmitter;
     private BitmapFont font18;
     private BitmapFont font24;
+    private BitmapFont font72;
     private int selectedCellX, selectedCellY;
-    private float monsterTimer;
     private Player player;
+    private Antiking antiking;
     private King king;
+    private int level;
+    private boolean isGameOver;
+
+    enum EventSource {
+        EV_MONSTER_EMITTER,
+        EV_BULLET_EMITTER,
+        EV_TURRET_BUTTON
+    }
 
     private Stage stage;
     private Group groupTurretAction;
     private Group groupTurretSelection;
+
 
     public Map getMap() {
         return map;
@@ -53,12 +62,20 @@ public class GameScreen implements Screen {
         return bulletEmitter;
     }
 
+    public TurretEmitter getTurretEmitter() {
+        return turretEmitter;
+    }
+
     public GameScreen(SpriteBatch batch) {
         this.batch = batch;
     }
 
     public InfoEmitter getInfoEmitter() {
         return infoEmitter;
+    }
+
+    public Antiking getAntiking() {
+        return antiking;
     }
 
     public King getKing() {
@@ -68,11 +85,13 @@ public class GameScreen implements Screen {
     @Override
     public void show() {
         this.player = new Player();
-        this.king = new King();
         this.mousePosition = new Vector2(0, 0);
         this.particleEmitter = new ParticleEmitter();
         this.font18 = Assets.getInstance().getAssetManager().get("fonts/zorque18.ttf");
         this.font24 = Assets.getInstance().getAssetManager().get("fonts/zorque24.ttf");
+        this.font72 = Assets.getInstance().getAssetManager().get("fonts/zorque72.ttf");
+        this.king = new King();
+        this.antiking = new Antiking(this);
         this.bulletEmitter = new BulletEmitter(this);
         this.map = new Map("level01.map");
         this.monsterEmitter = new MonsterEmitter(this);
@@ -80,6 +99,9 @@ public class GameScreen implements Screen {
         this.infoEmitter = new InfoEmitter(this);
         this.selectedCellTexture = Assets.getInstance().getAtlas().findRegion("cursor");
         this.createGUI();
+        level = 1;
+        isGameOver = false;
+        levelStart();
     }
 
     public void createGUI() {
@@ -152,6 +174,7 @@ public class GameScreen implements Screen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 turretEmitter.removeTurret(player, selectedCellX, selectedCellY);
+                levelEvent(EventSource.EV_TURRET_BUTTON);
             }
         });
 
@@ -159,6 +182,7 @@ public class GameScreen implements Screen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 turretEmitter.upgradeTurret(player, selectedCellX, selectedCellY);
+                levelEvent(EventSource.EV_TURRET_BUTTON);
             }
         });
 
@@ -171,9 +195,29 @@ public class GameScreen implements Screen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 groupTurretSelection.setVisible(!groupTurretSelection.isVisible());
+                levelEvent(EventSource.EV_TURRET_BUTTON);
             }
         });
+
+        TextButton.TextButtonStyle textButtonStyleMenu = new TextButton.TextButtonStyle();
+        textButtonStyleMenu.up = skin.getDrawable("simpleButton");
+        textButtonStyleMenu.font = font24;
+        skin.add("menuSkin", textButtonStyleMenu);
+        Button btnMenu = new TextButton("Menu", skin, "menuSkin");
+        stage.addActor(btnMenu);
+        btnMenu.setPosition(900, 610);
+        btnMenu.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                ScreenManager.getInstance().changeScreen(ScreenManager.ScreenType.MENU);
+            }
+        });
+
         skin.dispose();
+    }
+
+    public BitmapFont getFont24() {
+        return font24;
     }
 
     @Override
@@ -193,6 +237,8 @@ public class GameScreen implements Screen {
         particleEmitter.render(batch);
         player.renderInfo(batch, font18);
         infoEmitter.render(batch, font24);
+        drawLevel();
+        if (isGameOver) drawGameOver();
         batch.end();
 
         stage.draw();
@@ -204,7 +250,6 @@ public class GameScreen implements Screen {
         monsterEmitter.update(dt);
         turretEmitter.update(dt);
         particleEmitter.update(dt);
-        generateMonsters(dt);
         bulletEmitter.update(dt);
         checkCollisions();
         checkMonstersInCastle();
@@ -254,12 +299,78 @@ public class GameScreen implements Screen {
         }
     }
 
-    public void generateMonsters(float dt) {
-        monsterTimer += dt;
-        if (monsterTimer > 0.5f) {
-            monsterTimer = 0;
-            monsterEmitter.setup(15, MathUtils.random(0, 8));
+    public void levelStart() {
+        monsterEmitter.reset();
+        turretEmitter.reset();
+        LinkedList<MonsterWaveType> waveList = monsterEmitter.getWaveList();
+        switch (level) {
+            case 1:
+                waveList.push(MonsterWaveType.STRONG);
+                waveList.push(MonsterWaveType.WEEK);
+                MonsterWaveType pause = MonsterWaveType.PAUSE;
+                pause.setDuration(5);
+                waveList.push(pause);
+
+                break;
+            case 2:
+                monsterEmitter.setSingleMonster(antiking);
+                waveList.push(MonsterWaveType.WEEK);
+                waveList.push(MonsterWaveType.SINGLE);
+                pause = MonsterWaveType.PAUSE;
+                pause.setDuration(5);
+                waveList.push(pause);
+                waveList.push(MonsterWaveType.STRONG);
+                break;
         }
+    }
+
+
+    private int bulletCounter = 0;
+
+    public void levelEvent(EventSource event) {
+        switch (event) {
+            case EV_BULLET_EMITTER:
+                bulletCounter++;
+                if (bulletCounter == 8) {
+                    player.changeCoins(-15);
+                    bulletCounter = 0;
+                }
+                break;
+            case EV_MONSTER_EMITTER:
+                if (monsterEmitter.getSingleMonsterStatus()) {
+                    groupTurretSelection.setVisible(false);
+                    bulletEmitter.setHasCost(true);
+                    antiking.updateHelperMap();
+                } else {
+                    groupTurretSelection.setVisible(true);
+                    bulletEmitter.setHasCost(false);
+                }
+                break;
+            case EV_TURRET_BUTTON:
+                if (monsterEmitter.getSingleMonsterStatus()) {
+                    groupTurretSelection.setVisible(false);
+                    antiking.updateHelperMap();
+                }
+                break;
+
+        }
+    }
+
+    public void levelFinish() {
+        if (level == 2) {
+            isGameOver = true;
+        } else {
+            level++;
+            levelStart();
+        }
+    }
+
+    public void drawLevel() {
+        font18.draw(batch, "Level: " + level, 20, 700);
+    }
+
+    public void drawGameOver() {
+        font72.draw(batch, "Game Over", 500, 300);
     }
 
     @Override

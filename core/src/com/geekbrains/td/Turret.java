@@ -35,6 +35,10 @@ public class Turret implements Poolable {
         return turretTemplateName;
     }
 
+    public float getFireRadius() {
+        return fireRadius;
+    }
+
     public int getCellX() {
         return cellX;
     }

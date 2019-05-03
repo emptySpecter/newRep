@@ -66,6 +66,13 @@ cursor
   orig: 80, 80
   offset: 0, 0
   index: -1
+antiking
+  rotate: false
+  xy: 486, 166
+  size: 80, 80
+  orig: 80, 80
+  offset: 0, 0
+  index: -1
 upperPanel
   rotate: false
   xy: 568, 2

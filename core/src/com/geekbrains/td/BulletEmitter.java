@@ -15,6 +15,7 @@ public class BulletEmitter extends ObjectPool<Bullet> {
     private TextureRegion bulletTexture;
     private Vector2 tmp;
     private HashMap<String, BulletTemplate> templates;
+    private boolean hasCost;
 
     @Override
     protected Bullet newObject() {
@@ -27,11 +28,19 @@ public class BulletEmitter extends ObjectPool<Bullet> {
         this.tmp = new Vector2(0, 0);
         this.templates = new HashMap<String, BulletTemplate>();
         this.loadTemplates();
+        hasCost = false;
+    }
+
+    public void setHasCost(boolean hasCost) {
+        this.hasCost = hasCost;
     }
 
     public void setup(String bulletTemplateName, float x, float y, float angleRad, Monster target) {
         Bullet b = getActiveElement();
         b.setup(templates.get(bulletTemplateName), target, x, y, angleRad);
+        if (hasCost){
+            gameScreen.levelEvent(GameScreen.EventSource.EV_BULLET_EMITTER);
+        }
     }
 
     public void render(SpriteBatch batch) {
