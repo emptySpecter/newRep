@@ -1,0 +1,17 @@
+# name, power, speed, autoaim
+# bullets-start
+Simple-I, 5, 200, false
+Simple-II, 15, 240, false
+Simple-III, 25, 280, false
+Seeking-I, 30, 60, true
+Seeking-II, 60, 80, true
+Seeking-III, 90, 100, true
+# bullets-end
+
+# name, image_x, image_y, price, fireRadius, chargeTime, rotationSpeed, childName, bulletName
+# turrets-start
+Red-Turret-I, 0, 0, 50, 300, 0.4, 180, Red-Turret-II, Simple-I
+Red-Turret-II, 0, 1, 200, 360, 0.1, 270, -, Simple-II
+Blue-Turret-I, 1, 0, 100, 600, 0.8, 180, Blue-Turret-II, Seeking-I
+Blue-Turret-II, 1, 1, 300, 720, 1.0, 360, -, Seeking-II
+# turrets-end
